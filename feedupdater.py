@@ -8,6 +8,7 @@ import time
 import tinyurl
 import threading
 import os
+import traceback
 from db import FeedDB
 from config import Config
 
@@ -79,7 +80,8 @@ class FeedUpdater(object):
                         callback(feed_info['title'], newstitle, newsurl, newsdate)
                 print "Updated: " + feed_info['title']
             except Exception as e:
-                print e
+                tb = traceback.format_exc()
+                print e, tb
                 print "Failed: " + feed_info['title']
 
             if not forever:

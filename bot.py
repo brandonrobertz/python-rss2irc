@@ -12,6 +12,7 @@ import re
 import feedparser
 import datetime
 import dateutil.parser
+import traceback
 from colour import Colours
 from db import FeedDB
 from config import Config
@@ -44,16 +45,16 @@ class IRCBot(irc.bot.SingleServerIRCBot):
 
     def on_join(self, connection, event):
         """Say hello to other people in the channel. """
-        welcome_msg = "Hi, I'm " + self.__get_colored_text('3',str(connection.get_nickname())) + " your bot. Send " + self.__get_colored_text(self.color_num,"!help") +" to get a list of commands."
+        # welcome_msg = "Hi, I'm " + self.__get_colored_text('3',str(connection.get_nickname())) + " your bot. Send " + self.__get_colored_text(self.color_num,"!help") +" to get a list of commands."
 
         if not self.__first_start:
-            connection.privmsg(self.__config.CHANNEL, welcome_msg)
+            #connection.privmsg(self.__config.CHANNEL, welcome_msg)
             self.__on_connect_cb()
             self.__first_start = True
 
         if event.source.nick != connection.get_nickname():
-            connection.privmsg(event.source.nick, welcome_msg)
-
+            #connection.privmsg(event.source.nick, welcome_msg)
+            pass
 
     def __handle_msg(self, msg):
         """Handles a cmd private message."""
@@ -101,7 +102,8 @@ class IRCBot(irc.bot.SingleServerIRCBot):
             else:
                 answer = "Use !help for possible commands."
         except Exception as e:
-            print e
+            tb = traceback.format_exc()
+            print e, tb
             answer = "Something went wrong :("
 
         return answer
@@ -144,15 +146,57 @@ class IRCBot(irc.bot.SingleServerIRCBot):
                     self.connection.privmsg(target, sub_line)
                     time.sleep(1) # Don't flood the target
         except Exception as e:
-            print e
+            tb = traceback.format_exc()
+            print e, tb
+
+    def rewrite_title(self, name, title):
+        # rewrites to apply to specfic feeds' titles
+        # in format of ( feedname, search, replace)
+        rewrites = (
+            ('arXiv:stat.ML', 'http://arxiv.org', 'https://arxiv.org'),
+            ('arXiv:stat.ML', r'\(arXiv:[0-9\.a-b]+.*\)', ''),
+        )
+        for rw in rewrites:
+            if rw[0] != name:
+                continue
+            search = rw[1]
+            replace = rw[2]
+            title = re.sub(search, replace, title)
+        title = re.sub(r'\s+', ' ', title).strip()
+        return title
+
+    def test_ignore_item( self, feedname, title):
+        """ Ignore a feed based on a match or some other criteria
+        """
+        # feedname, string, False=ignore if not found|True=ignore if found
+        ignores = (
+            ('arXiv:stat.ML', '[stat.ML]', False),
+        )
+        for ig in ignores:
+            print "ig", ig
+            if feedname != ig[0]:
+                continue
+            find_string = ig[1]
+            # TODO: implement ignore if found
+            if (not ig[2]) and (title.count(find_string) == 0):
+                return True
+        return False
 
     def post_news(self, feed_name, title, url, date):
         """Posts a new announcement to the channel"""
+        if self.test_ignore_item(str(feed_name), title):
+            return
+        title = self.rewrite_title( str(feed_name), title)
         try:
-            msg = self.__get_colored_text(self.color_feedname,str(feed_name)) + ": " + title + ", " + self.__get_colored_text(self.color_url,url) + ", " + self.__get_colored_text(self.color_date,str(date))
+            msg = "<{name}> {title} | {url}".format(**{
+                "name":  str(feed_name),
+                "title": title,
+                "url":   url
+            })
             self.send_msg(self.__config.CHANNEL, msg)
         except Exception as e:
-            print e
+            tb = traceback.format_exc()
+            print e, tb
 
     def __get_colored_text(self, color, text):
         if not self.__config.use_colors:
