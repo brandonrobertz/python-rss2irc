@@ -21,17 +21,15 @@ class FeedUpdater(object):
 
     def update_feeds(self, callback=None, forever=False):
         for feed in self.__db.get_feeds():
-            t = threading.Thread(target=self.__fetch_feed,
-                                 args=({
-                                    'id': feed[0],
-                                    'title': feed[1],
-                                    'url': feed[2],
-                                    'published': feed[3]
-                                    }, 
-                                    callback, 
-                                    forever, 
-                                    )
-                                 )
+            t = threading.Thread(
+                target=self.__fetch_feed,
+                args=({
+                    'id': feed[0],
+                    'title': feed[1],
+                    'url': feed[2],
+                    'published': feed[3]
+                }, callback, forever, 
+            ))
             t.start()
             self.__threads.append(t)
 
@@ -65,6 +63,8 @@ class FeedUpdater(object):
                         newsdate = newsdate.strftime(self.__config.dateformat)
 
                     except Exception as e:
+                        tb = traceback.format_exc()
+                        print "__fetch_feed(1) error: {}\n {}".format(e, tb)
                         try:
                             # Get date and parse it
                             newsdate = dateutil.parser.parse(newsitem.updated)
@@ -82,7 +82,8 @@ class FeedUpdater(object):
             except Exception as e:
                 tb = traceback.format_exc()
                 print e, tb
-                print "Failed: " + feed_info['title']
+                print "__fetch_feed(2) title: {} error {} \n {}".format(
+                    feed_info['title'], e, tb)
 
             if not forever:
                 break

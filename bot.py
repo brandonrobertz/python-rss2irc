@@ -104,7 +104,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         except Exception as e:
             tb = traceback.format_exc()
             print e, tb
-            answer = "Something went wrong :("
+            answer = "__handle_msg error: {} \n{}".format(e, tb)
 
         return answer
 
@@ -136,7 +136,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         """Changes the nickname if necessary"""
         connection.nick(connection.get_nickname() + "_")
 
-    def send_msg(self, target, msg):
+    def send_msg(self, target, msg, sleep_s=1):
         """Sends the message 'msg' to 'target'"""
         try:
             # Send multiple lines one-by-one
@@ -144,26 +144,41 @@ class IRCBot(irc.bot.SingleServerIRCBot):
                 # Split lines that are longer than 510 characters into multiple messages.
                 for sub_line in re.findall('.{1,510}', line):
                     self.connection.privmsg(target, sub_line)
-                    time.sleep(1) # Don't flood the target
+                    time.sleep(sleep_s) # Don't flood the target
         except Exception as e:
             tb = traceback.format_exc()
-            print e, tb
+            print "send_msg error", e, "\n", tb
 
-    def rewrite_title(self, name, title):
+    def rewrite_data(self, feedname, data, dtype='*'):
+        """ rewrite feed data (title, url) based on specific feeds
+        requirements/needs. return cleaned, stripped, rewritten input
+        """
         # rewrites to apply to specfic feeds' titles
-        # in format of ( feedname, search, replace)
+        # in format of ( feedname, search, replace, datatype)
+        # DATATYPES: "url", "title", "*" (all types)
         rewrites = (
-            ('arXiv:stat.ML', 'http://arxiv.org', 'https://arxiv.org'),
-            ('arXiv:stat.ML', r'\(arXiv:[0-9\.a-b]+.*\)', ''),
+            ('arXiv:stat.ML', 'http://arxiv.org',         'https://arxiv.org',   'url'),
+            # reinstate this after distill fixes its ssl cert
+            #('distill.pub',   'http://distill.pub',       'https://distill.pub', 'url'),
+            ('arXiv:stat.ML', r'\(arXiv:[0-9\.a-b]+.*\)', '',                    'title'),
         )
         for rw in rewrites:
-            if rw[0] != name:
+            rw_feedname = rw[0]
+            searchterm  = rw[1]
+            replacement = rw[2]
+            rw_dtype    = rw[3]
+
+            if rw_feedname != feedname:
                 continue
-            search = rw[1]
-            replace = rw[2]
-            title = re.sub(search, replace, title)
-        title = re.sub(r'\s+', ' ', title).strip()
-        return title
+            elif rw_dtype == '*' or rw_dtype == '*':
+                # if either dtype is *, skip following checks
+                pass
+            elif rw_dtype != dtype:
+                continue
+
+            data = re.sub(searchterm, replacement, data)
+        data = re.sub(r'\s+', ' ', data).strip()
+        return data
 
     def test_ignore_item( self, feedname, title):
         """ Ignore a feed based on a match or some other criteria
@@ -184,19 +199,20 @@ class IRCBot(irc.bot.SingleServerIRCBot):
 
     def post_news(self, feed_name, title, url, date):
         """Posts a new announcement to the channel"""
-        if self.test_ignore_item(str(feed_name), title):
-            return
-        title = self.rewrite_title( str(feed_name), title)
+        #if self.test_ignore_item(str(feed_name), title):
+        #    return
+        title = self.rewrite_data( str(feed_name), title, dtype='title')
+        url = self.rewrite_data( str(feed_name), url, dtype='url')
         try:
             msg = "<{name}> {title} | {url}".format(**{
                 "name":  str(feed_name),
                 "title": title,
                 "url":   url
             })
-            self.send_msg(self.__config.CHANNEL, msg)
+            self.send_msg(self.__config.CHANNEL, msg, sleep_s=10)
         except Exception as e:
             tb = traceback.format_exc()
-            print e, tb
+            print "post news error", e, "\n", tb
 
     def __get_colored_text(self, color, text):
         if not self.__config.use_colors:
