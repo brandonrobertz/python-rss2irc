@@ -28,7 +28,7 @@ class FeedUpdater(object):
                     'title': feed[1],
                     'url': feed[2],
                     'published': feed[3]
-                }, callback, forever, 
+                }, callback, forever,
             ))
             t.start()
             self.__threads.append(t)
@@ -42,6 +42,14 @@ class FeedUpdater(object):
         """Fetches a RSS feed, parses it and updates the database and/or announces new news."""
         while 1:
             try:
+                # check to see  if we should check feed or not
+                if self.__db.is_chan_idle(self.__config.CHANNEL, self.__config.IDLE_MINUTES):
+                    if not forever:
+                        break
+                    # sleep frequency minutes
+                    time.sleep(int(feed_info['published'])*60)
+                    continue
+
                 # Parse a feed's url
                 news = feedparser.parse( feed_info['url'] )
 
@@ -62,9 +70,7 @@ class FeedUpdater(object):
                         # Format date based on 'dateformat' in config.py
                         newsdate = newsdate.strftime(self.__config.dateformat)
 
-                    except Exception as e:
-                        tb = traceback.format_exc()
-                        print "__fetch_feed(1) error: {}\n {}".format(e, tb)
+                    except Exception, e:
                         try:
                             # Get date and parse it
                             newsdate = dateutil.parser.parse(newsitem.updated)
@@ -82,7 +88,7 @@ class FeedUpdater(object):
             except Exception as e:
                 tb = traceback.format_exc()
                 print e, tb
-                print "__fetch_feed(2) title: {} error {} \n {}".format(
+                print "__fetch_feed title: {} error {} \n {}".format(
                     feed_info['title'], e, tb)
 
             if not forever:

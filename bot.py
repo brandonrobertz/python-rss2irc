@@ -40,6 +40,9 @@ class IRCBot(irc.bot.SingleServerIRCBot):
 
     def on_welcome(self, connection, event):
         """Join the correct channel upon connecting"""
+        if self.__config.NICKSERV_PASSWORD:
+            print "Identifying for nick", self.__config.NICK
+            connection.privmsg("NICKSERV", "IDENTIFY {} {}".format(self.__config.NICK, self.__config.NICKSERV_PASSWORD))
         if irc.client.is_channel(self.__config.CHANNEL):
             connection.join(self.__config.CHANNEL)
 
@@ -121,12 +124,25 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         self.send_msg(event.source.nick, answer)
 
     def on_pubmsg(self, connection, event):
-        """Handles the bot's public (channel) messages"""
+        """ Called when a channel we're in gets a message. We use it to handle
+        bot commands (!help) and also keep track of how long since last
+        message so we don't interrupt convos.
+
+          event:
+            type: pubmsg
+            source: nick!ident@host.tld
+            target: #chan
+            arguments: [u'this is a message']
+            tags: []
+        """
         if len(event.arguments) < 1:
             return
 
         # Get the message. We are only interested in "!help"
         msg = event.arguments[0].lower().strip()
+
+        self.__db.set_new_chan_message(self.__config.CHANNEL)
+        #print "IS IDLE?", self.__db.is_chan_idle(self.__config.CHANNEL, self.__config.IDLE_MINUTES)
 
         # Send the answer as a private message
         if msg == "!help":
@@ -134,9 +150,14 @@ class IRCBot(irc.bot.SingleServerIRCBot):
 
     def on_nicknameinuse(self, connection, event):
         """Changes the nickname if necessary"""
-        connection.nick(connection.get_nickname() + "_")
+        print "Nick in use"
+        if not self.__config.NICKSERV_PASSWORD:
+            connection.nick(connection.get_nickname() + "_")
+        else:
+            #connection.nick(self.__config.NICK)
+            connection.privmsg("NICKSERV", "GHOST {} {}".format(self.__config.NICK, self.__config.NICKSERV_PASSWORD))
 
-    def send_msg(self, target, msg, sleep_s=1):
+    def send_msg(self, target, msg, sleep_s=2):
         """Sends the message 'msg' to 'target'"""
         try:
             # Send multiple lines one-by-one
@@ -153,16 +174,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         """ rewrite feed data (title, url) based on specific feeds
         requirements/needs. return cleaned, stripped, rewritten input
         """
-        # rewrites to apply to specfic feeds' titles
-        # in format of ( feedname, search, replace, datatype)
-        # DATATYPES: "url", "title", "*" (all types)
-        rewrites = (
-            ('arXiv:stat.ML', 'http://arxiv.org',         'https://arxiv.org',   'url'),
-            # reinstate this after distill fixes its ssl cert
-            #('distill.pub',   'http://distill.pub',       'https://distill.pub', 'url'),
-            ('arXiv:stat.ML', r'\(arXiv:[0-9\.a-b]+.*\)', '',                    'title'),
-        )
-        for rw in rewrites:
+        for rw in self.__config.rewrites:
             rw_feedname = rw[0]
             searchterm  = rw[1]
             replacement = rw[2]
@@ -198,7 +210,9 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         return False
 
     def post_news(self, feed_name, title, url, date):
-        """Posts a new announcement to the channel"""
+        """ Posts a new announcement to the channel. This gets
+        called as a callback by the FeedUpdater.
+        """
         #if self.test_ignore_item(str(feed_name), title):
         #    return
         title = self.rewrite_data( str(feed_name), title, dtype='title')
@@ -209,7 +223,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
                 "title": title,
                 "url":   url
             })
-            self.send_msg(self.__config.CHANNEL, msg, sleep_s=10)
+            self.send_msg(self.__config.CHANNEL, msg, sleep_s=2)
         except Exception as e:
             tb = traceback.format_exc()
             print "post news error", e, "\n", tb
@@ -239,8 +253,8 @@ class Bot(object):
         if len(self.__missing_options) > 0:
             return None
         self.__db = FeedDB(self.__config)
-        self.__feedupdater = FeedUpdater(self.__config, self.__db)
         self.__irc = IRCBot(self.__config, self.__db, self.on_started)
+        self.__feedupdater = FeedUpdater(self.__config, self.__db)
         self.__connected = False
 
     def __check_config(self):
