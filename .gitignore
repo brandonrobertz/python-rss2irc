@@ -1,7 +1,7 @@
 # Project files:
 config.py
 feeds.db
-feeds.db.bak
+feeds.db.*
 feeds.sql
 
 

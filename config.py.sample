@@ -3,25 +3,71 @@
 
 class Config(object):
     def __init__(self):
-        self.HOST = "irc.freenode.org"
-        self.PORT = 6667
-        self.PASSWORD = None
-        self.SSL = False
-        self.CHANNEL = "##YOURCHANNEL"
-        self.NICK = "YOURBOTNICK"
-        self.admin_nicks= ['YOURADMINNICK']
+        self.HOST = "irc.network"
+        self.PORT = 6697
+        # server pass
+        self.PASSWORD = ""
+        # NickServ identify password
+        self.NICKSERV_PASSWORD = ""
+        self.SSL = True
+        self.CHANNEL = ""
+        self.NICK = ""
+
+        # number of channel idle minutes before posting RSS feed items
+        self.IDLE_MINUTES = 15
+
+        # wait for a message before counting idle times or posting items
+        self.WAIT_FOR_FIRST_MSG = True
+
+        # whether or not to respond to !help messages via PM
+        self.ENABLE_PUBLIC_HELP_CMD = False
+        # whether to pay attention to private messages at all
+        self.LISTEN_TO_PRIVMSG = False
+
+        # whether or not to send a message to channel on join
+        # None or False means no message. Otherwise the contents
+        # of this variable will be sent upon chan join (very annoying)
+        self.CHAN_WELCOME_MSG = None
+
+        # Shorten urls after this number of chars, setting to 0 or False
+        # will disable (max length of an IRC message is 510 including the
+        # name of the channel, etc. Anything beyond that will be truncated)
+        self.SHORTEN_URLS = 100
+
+        # people to listen to
+        self.admin_nicks= ['yournick']
+
+        # DEPRECATED: Do not use. Future versions will not color.
         #=Colours=
         #1 - red		2 - green	3 - yellow
         #4 - blue		5 - purple  6 - cyan
         #7 - lightgreen 8 - grey	9 - pink
         #10 - lighblue
-        self.use_colors = True
+        self.use_colors = False
         self.num_col = '1'
         self.date = '8'
         self.feedname = '2'
         self.url = '4'
-        self.shorturls = False
+        self.shorturls = True
+
+        # for responding to ! commands in public channels
         self.dateformat = '%Y-%m-%d %H:%M:%S %z'
-        self.feedlimit = 10
+        self.feedlimit = 4
         self.feedorderdesc = True
-        self.update_before_connecting = True #Update all feeds before connecting to the IRC server
+
+        # Update all feeds before connecting to the IRC server
+        self.update_before_connecting = True
+
+        # rewrites to apply to specfic feeds' titles
+        # in format of ( feedname, search, replace, field)
+        # available fields: "url", "title", "*" (all types)
+        self.rewrites = (
+            (r'arXiv:stat.ML', 'http://arxiv.org', 'https://arxiv.org', 'url'),
+            (r'arXiv:cs.LG', 'http://arxiv.org', 'https://arxiv.org', 'url'),
+            # reinstate this after distill fixes its ssl cert
+            #('distill.pub', 'http://distill.pub', 'https://distill.pub', 'url'),
+            ('arXiv:stat.ML', r'\(arXiv:[0-9\.a-b]+.*\)', '', 'title'),
+            ('arXiv:cs.LG', r'\(arXiv:[0-9\.a-b]+.*\)', '', 'title'),
+            ('infoworld:AI', '#tk.rss_artificialintelligence', '', 'url'),
+        )
+

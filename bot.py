@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import ssl
 import threading
 import irc.bot
@@ -18,12 +17,15 @@ from db import FeedDB
 from config import Config
 from feedupdater import FeedUpdater
 
+
 class IRCBot(irc.bot.SingleServerIRCBot):
     def __init__(self, config, db, on_connect_cb):
         self.__config = config
         self.__db = db
         self.__on_connect_cb = on_connect_cb
-        self.__servers = [irc.bot.ServerSpec(self.__config.HOST, self.__config.PORT, self.__config.PASSWORD)]
+        self.__servers = [irc.bot.ServerSpec(
+            self.__config.HOST, self.__config.PORT, self.__config.PASSWORD
+        )]
         self.__first_start = False
         self.color_num = self.__config.num_col
         self.color_date = self.__config.date
@@ -34,30 +36,47 @@ class IRCBot(irc.bot.SingleServerIRCBot):
 
         if self.__config.SSL:
             ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
-            super(IRCBot, self).__init__(self.__servers, self.__config.NICK, self.__config.NICK, connect_factory=ssl_factory)
+            super(IRCBot, self).__init__(
+                self.__servers,
+                self.__config.NICK,
+                self.__config.NICK,
+                connect_factory=ssl_factory
+            )
         else:
-            super(IRCBot, self).__init__(self.__servers, self.__config.NICK, self.__config.NICK)
+            super(IRCBot, self).__init__(
+                self.__servers, self.__config.NICK, self.__config.NICK
+            )
 
     def on_welcome(self, connection, event):
-        """Join the correct channel upon connecting"""
+        """
+        Join the correct channel upon connecting. This runs when we first join
+        the IRC server.
+        """
         if self.__config.NICKSERV_PASSWORD:
             print "Identifying for nick", self.__config.NICK
-            connection.privmsg("NICKSERV", "IDENTIFY {} {}".format(self.__config.NICK, self.__config.NICKSERV_PASSWORD))
+            msg = "IDENTIFY {} {}".format(
+                self.__config.NICK, self.__config.NICKSERV_PASSWORD
+            )
+            connection.privmsg( "NICKSERV", msg)
+        # make sure we join chans as the last thing
         if irc.client.is_channel(self.__config.CHANNEL):
             connection.join(self.__config.CHANNEL)
 
     def on_join(self, connection, event):
-        """Say hello to other people in the channel. """
-        # welcome_msg = "Hi, I'm " + self.__get_colored_text('3',str(connection.get_nickname())) + " your bot. Send " + self.__get_colored_text(self.color_num,"!help") +" to get a list of commands."
-
+        """
+        Set up some params and run callbacks on channel join messages
+        (including our own)
+        """
         if not self.__first_start:
-            #connection.privmsg(self.__config.CHANNEL, welcome_msg)
             self.__on_connect_cb()
             self.__first_start = True
 
-        if event.source.nick != connection.get_nickname():
-            #connection.privmsg(event.source.nick, welcome_msg)
-            pass
+        # This is stupid don't do it
+        # if self.__config.CHAN_WELCOME_MSG:
+        #     connection.privmsg(
+        #         self.__config.CHANNEL,
+        #         self.__config.CHAN_WELCOME_MSG
+        #     )
 
     def __handle_msg(self, msg):
         """Handles a cmd private message."""
@@ -94,8 +113,11 @@ class IRCBot(irc.bot.SingleServerIRCBot):
                 try:
                     feedid = int(msg.replace("!lastfeed","").strip())
                 except:
-                    return self.__get_colored_text('1',"Wrong command: ") + msg + ", use: !lastfeed <feedid>"
-                items = self.__db.get_news_from_feed(feedid, self.__config.feedlimit)
+                    return self.__get_colored_text('1',"Wrong command: ") + \
+                        msg + ", use: !lastfeed <feedid>"
+                items = self.__db.get_news_from_feed(
+                    feedid, self.__config.feedlimit
+                )
                 if not self.__config.feedorderdesc:
                     items = items[::-1]
                 for entry in items:
@@ -112,13 +134,14 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         return answer
 
     def on_privmsg(self, connection, event):
-        """Handles the bot's private messages"""
-        if len(event.arguments) < 1:
+        """
+        Handles the bot's private messages
+        """
+        if (len(event.arguments) < 1) or (not self.__config.LISTEN_TO_PRIVMSG):
             return
 
         # Get the message and return an answer
         msg = event.arguments[0].lower().strip()
-        print msg
 
         answer = self.__handle_msg(msg)
         self.send_msg(event.source.nick, answer)
@@ -135,14 +158,17 @@ class IRCBot(irc.bot.SingleServerIRCBot):
             arguments: [u'this is a message']
             tags: []
         """
-        if len(event.arguments) < 1:
+        # update channel's last activity time
+        self.__db.set_new_chan_message(self.__config.CHANNEL)
+
+        # if we don't use public help commands or not a user message, bail
+        public_help_cmd = not self.__config.ENABLE_PUBLIC_HELP_CMD
+        not_enough_arguments = len(event.arguments) < 1
+        if not_enough_arguments or not public_help_cmd:
             return
 
         # Get the message. We are only interested in "!help"
         msg = event.arguments[0].lower().strip()
-
-        self.__db.set_new_chan_message(self.__config.CHANNEL)
-        #print "IS IDLE?", self.__db.is_chan_idle(self.__config.CHANNEL, self.__config.IDLE_MINUTES)
 
         # Send the answer as a private message
         if msg == "!help":
@@ -154,24 +180,30 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         if not self.__config.NICKSERV_PASSWORD:
             connection.nick(connection.get_nickname() + "_")
         else:
+            print "Ghosting nick"
             #connection.nick(self.__config.NICK)
-            connection.privmsg("NICKSERV", "GHOST {} {}".format(self.__config.NICK, self.__config.NICKSERV_PASSWORD))
+            msg = "GHOST {} {}".format(
+                self.__config.NICK, self.__config.NICKSERV_PASSWORD
+            )
+            connection.privmsg( "NICKSERV", msg)
 
     def send_msg(self, target, msg, sleep_s=2):
         """Sends the message 'msg' to 'target'"""
         try:
-            # Send multiple lines one-by-one
-            for line in msg.split("\n"):
-                # Split lines that are longer than 510 characters into multiple messages.
-                for sub_line in re.findall('.{1,510}', line):
-                    self.connection.privmsg(target, sub_line)
-                    time.sleep(sleep_s) # Don't flood the target
+            msg = msg.replace('\n', ' ')
+            # only take first 510 lines, IRC has a limit of 510 chars
+            # per message including channel name, etc
+            sub_line = re.findall('.{1,510}', msg)[0]
+            self.connection.privmsg(target, sub_line)
+            # Don't flood the target
+            time.sleep(sleep_s)
         except Exception as e:
             tb = traceback.format_exc()
             print "send_msg error", e, "\n", tb
 
     def rewrite_data(self, feedname, data, dtype='*'):
-        """ rewrite feed data (title, url) based on specific feeds
+        """
+        Rewrite feed data (title, url) based on specific feeds
         requirements/needs. return cleaned, stripped, rewritten input
         """
         for rw in self.__config.rewrites:
@@ -193,7 +225,8 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         return data
 
     def test_ignore_item( self, feedname, title):
-        """ Ignore a feed based on a match or some other criteria
+        """
+        Ignore a feed based on a match or some other criteria
         """
         # feedname, string, False=ignore if not found|True=ignore if found
         ignores = (
@@ -210,19 +243,32 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         return False
 
     def post_news(self, feed_name, title, url, date):
-        """ Posts a new announcement to the channel. This gets
+        """
+        Posts a new announcement to the channel. This gets
         called as a callback by the FeedUpdater.
         """
         #if self.test_ignore_item(str(feed_name), title):
         #    return
         title = self.rewrite_data( str(feed_name), title, dtype='title')
         url = self.rewrite_data( str(feed_name), url, dtype='url')
+        print "---- VARS ----"
+        print "name"
+        print str(feed_name)
+        print "title"
+        print title
+        print "url"
+        print url
         try:
-            msg = "<{name}> {title} | {url}".format(**{
+            print "---- ARGS ----"
+            args = {
                 "name":  str(feed_name),
                 "title": title,
                 "url":   url
-            })
+            }
+            print args
+            print "---- MSG ----"
+            msg = u"<{name}> {title} | {url}".format(**args)
+            print "Sending msg", msg
             self.send_msg(self.__config.CHANNEL, msg, sleep_s=2)
         except Exception as e:
             tb = traceback.format_exc()
@@ -235,16 +281,18 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         return Colours(color, text).get()
 
     def __help_msg(self):
-        """Returns the help/usage message"""
-        return """\
+        """
+        Returns the help/usage message
+        """
+        return """
 Help:
-    Send all commands as a private message to """ + self.connection.get_nickname() + """
+    Send all commands as a private message to {}
     - !help         Prints this help
     - !list         Prints all feeds
     - !stats        Prints some statistics
     - !last         Prints the last 10 entries
     - !lastfeed <feedid> Prints the last 10 entries from a specific feed
-"""
+""".format(self.connection.get_nickname())
 
 class Bot(object):
     def __init__(self):
@@ -258,9 +306,12 @@ class Bot(object):
         self.__connected = False
 
     def __check_config(self):
-        necessary_options = ["HOST", "PORT", "PASSWORD", "SSL", "CHANNEL", "NICK", "admin_nicks", "use_colors", 
-                             "num_col", "date", "feedname", "shorturls", "dateformat", "feedlimit", "update_before_connecting",
-                             "url", "feedorderdesc"]
+        necessary_options = [
+            "HOST", "PORT", "PASSWORD", "SSL", "CHANNEL", "NICK", "admin_nicks",
+            "use_colors", "num_col", "date", "feedname", "shorturls",
+            "dateformat", "feedlimit", "update_before_connecting", "url",
+            "feedorderdesc"
+        ]
         missing_options = []
         for key in necessary_options:
             if not hasattr(self.__config, key):
@@ -276,7 +327,9 @@ class Bot(object):
 
     def initial_feed_update(self):
         def print_feed_update(feed_title, news_title, news_url, news_date):
-            print("[+]: {}||{}||{}||{}".format(feed_title, news_title, news_url, news_date))
+            print("[+]: {}||{}||{}||{}".format(
+                feed_title, news_title, news_url, news_date
+            ))
 
         if self.__config.update_before_connecting:
             print "Started pre-connection updates!"
@@ -284,9 +337,15 @@ class Bot(object):
             print "DONE!"
 
     def on_started(self):
-        """Gets executed after the IRC thread has successfully established a connection."""
+        """
+        Gets executed after the IRC thread has successfully established a
+        connection.
+        """
         if not self.__connected:
             print "Connected!"
             self.__feedupdater.update_feeds(self.__irc.post_news, True)
             print "Started feed updates!"
+            if self.__config.WAIT_FOR_FIRST_MSG:
+                print "Clearing last messages table"
+                self.__db.reset_messages_count()
             self.__connected = True
