@@ -73,6 +73,10 @@ class FeedUpdater(object):
             if newsurl == "Error": #If that fails, use the long version
                 print "Link shortening failed", newsurl
                 newsurl = newsitem.link
+            # the tinyurl library has http links hardcoded
+            newsurl = newsurl.replace(
+                'http://tinyurl.com', 'https://tinyurl.com'
+            )
 
         return newsurl
 
@@ -101,7 +105,7 @@ class FeedUpdater(object):
                 )
 
                 wait_for_observations = self.__config.WAIT_FOR_FIRST_MSG \
-                    and observations
+                    and not observations
 
                 print('wait?', wait_for_observations, 'idle?', idle)
 
