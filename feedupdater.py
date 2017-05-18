@@ -5,7 +5,8 @@ import datetime
 import dateutil.parser
 import signal
 import time
-import tinyurl
+# this must be a practical joke or some performance art
+from TinyURL import TinyURL
 import threading
 import os
 import traceback
@@ -67,11 +68,18 @@ class FeedUpdater(object):
         care of url shortening, as well.
         """
         newsurl = newsitem.link
+        urllen = len(newsitem.link)
 
-        if self.__config.SHORTEN_URLS and len(newsitem.link) > self.__config.SHORTEN_URLS:
-            newsurl = tinyurl.create_one(newsitem.link) # Create a short link
-            if newsurl == "Error": #If that fails, use the long version
-                print "Link shortening failed", newsurl
+        if self.__config.SHORTEN_URLS and urllen > self.__config.SHORTEN_URLS:
+            try:
+                newsurl = TinyURL.create_one(newsitem.link)
+            except Exception as e:
+                print('Error loading tinyurl', e)
+                newsurl = None
+            # If that fails, use the long version ... yes apparently it returns
+            # the string "Error" on error
+            if not newsurl or newsurl == "Error":
+                print("Link shortening failed", newsurl)
                 newsurl = newsitem.link
             # the tinyurl library has http links hardcoded
             newsurl = newsurl.replace(
@@ -107,7 +115,7 @@ class FeedUpdater(object):
                 wait_for_observations = self.__config.WAIT_FOR_FIRST_MSG \
                     and not observations
 
-                print('wait?', wait_for_observations, 'idle?', idle)
+                print(('wait?', wait_for_observations, 'idle?', idle))
 
                 if not wait_for_observations and idle:
                     # Reverse the ordering. Oldest first.
@@ -131,14 +139,14 @@ class FeedUpdater(object):
                                 newsdate
                             )
                 else:
-                    print feed_info['url'], "chan", \
-                        self.__config.CHANNEL, "is idle"
+                    print(feed_info['url'], "chan", \
+                        self.__config.CHANNEL, "is idle")
 
             except Exception as e:
                 tb = traceback.format_exc()
-                print e, tb
-                print "Error on title: {} error {} \n {}".format(
-                    feed_info['title'], e, tb)
+                print(e, tb)
+                print("Error on title: {} error {} \n {}".format(
+                    feed_info['title'], e, tb))
 
             if not forever:
                 break
@@ -148,9 +156,9 @@ class FeedUpdater(object):
 
 if __name__ == "__main__":
     def print_line(feed_title, news_title, news_url, news_date):
-        print(u"[+]: {}||{}||{}||{}".format(
+        print(("[+]: {}||{}||{}||{}".format(
             feed_title.decode("utf-8"), news_title, news_url, news_date
-        ))
+        )))
 
     def main():
         config = Config()
@@ -159,7 +167,7 @@ if __name__ == "__main__":
         updater.update_feeds(print_line, False)
 
     def signal_handler(signal, frame):
-        print "Caught SIGINT, terminating."
+        print("Caught SIGINT, terminating.")
         os._exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)

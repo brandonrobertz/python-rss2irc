@@ -5,7 +5,6 @@ import threading
 import irc.bot
 import irc.client
 import irc.connection
-import tinyurl
 import time
 import re
 import feedparser
@@ -53,7 +52,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         the IRC server.
         """
         if self.__config.NICKSERV_PASSWORD:
-            print "Identifying for nick", self.__config.NICK
+            print("Identifying for nick", self.__config.NICK)
             msg = "IDENTIFY {} {}".format(
                 self.__config.NICK, self.__config.NICKSERV_PASSWORD
             )
@@ -128,7 +127,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
                 answer = "Use !help for possible commands."
         except Exception as e:
             tb = traceback.format_exc()
-            print e, tb
+            print(e, tb)
             answer = "__handle_msg error: {} \n{}".format(e, tb)
 
         return answer
@@ -176,11 +175,11 @@ class IRCBot(irc.bot.SingleServerIRCBot):
 
     def on_nicknameinuse(self, connection, event):
         """Changes the nickname if necessary"""
-        print "Nick in use"
+        print("Nick in use")
         if not self.__config.NICKSERV_PASSWORD:
             connection.nick(connection.get_nickname() + "_")
         else:
-            print "Ghosting nick"
+            print("Ghosting nick")
             #connection.nick(self.__config.NICK)
             msg = "GHOST {} {}".format(
                 self.__config.NICK, self.__config.NICKSERV_PASSWORD
@@ -199,7 +198,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
             time.sleep(sleep_s)
         except Exception as e:
             tb = traceback.format_exc()
-            print "send_msg error", e, "\n", tb
+            print("send_msg error", e, "\n", tb)
 
     def rewrite_data(self, feedname, data, dtype='*'):
         """
@@ -233,7 +232,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
             ('arXiv:stat.ML', '[stat.ML]', False),
         )
         for ig in ignores:
-            print "ig", ig
+            print("ig", ig)
             if feedname != ig[0]:
                 continue
             find_string = ig[1]
@@ -251,28 +250,28 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         #    return
         title = self.rewrite_data( str(feed_name), title, dtype='title')
         url = self.rewrite_data( str(feed_name), url, dtype='url')
-        print "---- VARS ----"
-        print "name"
-        print str(feed_name)
-        print "title"
-        print title
-        print "url"
-        print url
+        print("---- VARS ----")
+        print("name")
+        print(str(feed_name))
+        print("title")
+        print(title)
+        print("url")
+        print(url)
         try:
-            print "---- ARGS ----"
+            print("---- ARGS ----")
             args = {
                 "name":  str(feed_name),
                 "title": title,
                 "url":   url
             }
-            print args
-            print "---- MSG ----"
-            msg = u"<{name}> {title} | {url}".format(**args)
-            print "Sending msg", msg
+            print(args)
+            print("---- MSG ----")
+            msg = "<{name}> {title} | {url}".format(**args)
+            print("Sending msg", msg)
             self.send_msg(self.__config.CHANNEL, msg, sleep_s=2)
         except Exception as e:
             tb = traceback.format_exc()
-            print "post news error", e, "\n", tb
+            print("post news error", e, "\n", tb)
 
     def __get_colored_text(self, color, text):
         if not self.__config.use_colors:
@@ -327,14 +326,14 @@ class Bot(object):
 
     def initial_feed_update(self):
         def print_feed_update(feed_title, news_title, news_url, news_date):
-            print("[+]: {}||{}||{}||{}".format(
+            print(("[+]: {}||{}||{}||{}".format(
                 feed_title, news_title, news_url, news_date
-            ))
+            )))
 
         if self.__config.update_before_connecting:
-            print "Started pre-connection updates!"
+            print("Started pre-connection updates!")
             self.__feedupdater.update_feeds(print_feed_update, False)
-            print "DONE!"
+            print("DONE!")
 
     def on_started(self):
         """
@@ -342,10 +341,10 @@ class Bot(object):
         connection.
         """
         if not self.__connected:
-            print "Connected!"
+            print("Connected!")
             self.__feedupdater.update_feeds(self.__irc.post_news, True)
-            print "Started feed updates!"
+            print("Started feed updates!")
             if self.__config.WAIT_FOR_FIRST_MSG:
-                print "Clearing last messages table"
+                print("Clearing last messages table")
                 self.__db.reset_messages_count()
             self.__connected = True

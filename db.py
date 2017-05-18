@@ -139,7 +139,7 @@ class FeedDB(object):
                 "update chat set time = :time where id = :id limit 1",
                 {"time": ts, "id": pk}
             )
-        print "New msg for", chan, "at", now
+        print("New msg for", chan, "at", now)
 
     def now_timestamp(self):
         """

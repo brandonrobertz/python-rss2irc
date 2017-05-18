@@ -6,7 +6,7 @@ import os
 import signal
 
 def signal_handler(signal, frame):
-    print "Caught SIGINT, terminating."
+    print("Caught SIGINT, terminating.")
     os._exit(0)
 
 if __name__ == "__main__":
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     missing_config_keys = bot.get_missing_options()
     if not len(missing_config_keys) == 0:
         for key in missing_config_keys:
-            print "Config option '{}' is missing! Please check your config!".format(key)
+            print("Config option '{}' is missing! Please check your config!".format(key))
         os._exit(1)
 
     bot._Bot__irc.connection.buffer_class.errors = 'replace' # prevent utf-8 error in jaraco.stream

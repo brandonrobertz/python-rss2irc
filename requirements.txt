@@ -13,6 +13,6 @@ more-itertools==2.2
 python-dateutil==2.5.3
 pytz==2016.4
 six==1.10.0
-git+https://github.com/palantir/sqlite3worker#egg=sqlite3worker
+sqlite3worker==1.1.7
 tempora==1.4
-TinyUrl==0.1.0
+git+https://github.com/brandonrobertz/TinyURL#egg=TinyURL
