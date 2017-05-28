@@ -30,7 +30,6 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         self.color_date = self.__config.date
         self.color_feedname = self.__config.feedname
         self.color_url = self.__config.url
-        self.shorturls = self.__config.shorturls
         self.dateformat = self.__config.dateformat
 
         if self.__config.SSL:
@@ -307,7 +306,7 @@ class Bot(object):
     def __check_config(self):
         necessary_options = [
             "HOST", "PORT", "PASSWORD", "SSL", "CHANNEL", "NICK", "admin_nicks",
-            "use_colors", "num_col", "date", "feedname", "shorturls",
+            "use_colors", "num_col", "date", "feedname",
             "dateformat", "feedlimit", "update_before_connecting", "url",
             "feedorderdesc"
         ]

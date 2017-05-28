@@ -48,7 +48,13 @@ class Config(object):
         self.date = '8'
         self.feedname = '2'
         self.url = '4'
-        self.shorturls = True
+
+        # bitly link shortening
+        # Shorten urls after this number of chars, setting to 0 or False
+        # will disable (max length of an IRC message is 510 including the
+        # name of the channel, etc. Anything beyond that will be truncated)
+        self.SHORTEN_URLS = 80
+        self.bitly_apikey = ""
 
         # for responding to ! commands in public channels
         self.dateformat = '%Y-%m-%d %H:%M:%S %z'

@@ -5,13 +5,39 @@ import datetime
 import dateutil.parser
 import signal
 import time
-# this must be a practical joke or some performance art
-from TinyURL import TinyURL
+import requests
 import threading
 import os
 import traceback
+import random
 from db import FeedDB
 from config import Config
+
+
+def shorten_url(url, config):
+    """
+    Returns None on error
+    """
+    retries = 3
+    while retries >= 0:
+        try:
+            bitly = "{}/shorten?access_token={}&longUrl={}&domain=j.mp".format(
+                "https://api-ssl.bitly.com/v3",
+                config.bitly_apikey,
+                url
+            )
+            response = requests.get(bitly)
+            assert response.status_code == 200
+            data = response.json()
+            assert data['status_txt'] == 'OK'
+            assert data['status_code'] == 200
+            # Bitly will return a short url as text
+            return data['data']['url']
+        except Exception as e:
+            print('Bitly error', e)
+            retries -= 1
+            time.sleep(random.random() * 5)
+
 
 class FeedUpdater(object):
 
@@ -72,13 +98,13 @@ class FeedUpdater(object):
 
         if self.__config.SHORTEN_URLS and urllen > self.__config.SHORTEN_URLS:
             try:
-                newsurl = TinyURL.create_one(newsitem.link)
+                newsurl = shorten_url(newsitem.link, self.__config)
             except Exception as e:
                 print('Error loading tinyurl', e)
                 newsurl = None
             # If that fails, use the long version ... yes apparently it returns
             # the string "Error" on error
-            if not newsurl or newsurl == "Error":
+            if not newsurl:
                 print("Link shortening failed", newsurl)
                 newsurl = newsitem.link
             # the tinyurl library has http links hardcoded
