@@ -32,7 +32,7 @@ def shorten_url(url, config):
             assert data['status_txt'] == 'OK'
             assert data['status_code'] == 200
             # Bitly will return a short url as text
-            return data['data']['url']
+            return data['data']['url'].replace('http://', 'https://')
         except Exception as e:
             print('Bitly error', e)
             retries -= 1
