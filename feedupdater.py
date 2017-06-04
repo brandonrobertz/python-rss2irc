@@ -88,7 +88,7 @@ class FeedUpdater(object):
 
         return "no date"
 
-    def extract_url(self, newsitem):
+    def extract_url(self, newsitem, force_shorten=False):
         """
         Take our newsitem and return the title as a string. Take
         care of url shortening, as well.
@@ -96,7 +96,7 @@ class FeedUpdater(object):
         newsurl = newsitem.link
         urllen = len(newsitem.link)
 
-        if self.__config.SHORTEN_URLS and urllen > self.__config.SHORTEN_URLS:
+        if force_shorten or (urllen > self.__config.SHORTEN_URLS):
             try:
                 newsurl = shorten_url(newsitem.link, self.__config)
             except Exception as e:
@@ -149,7 +149,8 @@ class FeedUpdater(object):
                         # formatting
                         newstitle = newsitem.title
                         newsdate = self.extract_date(newsitem)
-                        newsurl = self.extract_url(newsitem)
+                        fs = feed_info['title'] in self.__config.FORCE_SHORTEN
+                        newsurl = self.extract_url(newsitem, force_shorten=fs)
                         # Update the database. If it's new, post it
                         is_new = self.__db.insert_news(
                             feed_info['id'],

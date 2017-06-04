@@ -54,6 +54,9 @@ class Config(object):
         # will disable (max length of an IRC message is 510 including the
         # name of the channel, etc. Anything beyond that will be truncated)
         self.SHORTEN_URLS = 80
+        # put the names of any feed you want to force shortening on here
+        self.FORCE_SHORTEN = []
+        # bitly API token
         self.bitly_apikey = ""
 
         # for responding to ! commands in public channels

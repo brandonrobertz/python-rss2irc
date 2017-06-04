@@ -102,3 +102,4 @@ ENV/
 
 Makefile.deploy
 venv*
+*.bak
