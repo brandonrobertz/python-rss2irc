@@ -32,7 +32,8 @@ class FeedDB(object):
         self.__db_worker.execute(
             'CREATE TABLE news (id INTEGER PRIMARY KEY AUTOINCREMENT, ' \
             'title CHAR(255), url CHAR(255), feedid INTEGER, ' \
-            'published TEXT, FOREIGN KEY(feedid) REFERENCES feeds(id))'
+            'published TEXT, version INTEGER, ' \
+			'FOREIGN KEY(feedid) REFERENCES feeds(id))'
         )
         self.__db_worker.execute(
             'CREATE TABLE chat (id INTEGER PRIMARY KEY AUTOINCREMENT, ' \

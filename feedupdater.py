@@ -10,6 +10,7 @@ import threading
 import os
 import traceback
 import random
+import re
 from db import FeedDB
 from config import Config
 
@@ -93,8 +94,18 @@ class FeedUpdater(object):
         Take our newsitem and return the title as a string. Take
         care of url shortening, as well.
         """
+        print("extract_url %s" % newsitem)
         newsurl = newsitem.link
         urllen = len(newsitem.link)
+
+		# if we have a arXiv link, use the versioned link
+        if re.match('https?://arxiv.org/', newsurl):
+            matches = re.match(self.__config.find_pattern, newsitem.title)
+            if matches and matches.groupdict().get('version'):
+                url = "%s%s" % (newsitem.link, matches.groupdict()['version'])
+                newsitem.link = url
+                newsurl = url
+                print("versioned url %s" % url)
 
         if force_shorten or (urllen > self.__config.SHORTEN_URLS):
             try:
@@ -140,8 +151,6 @@ class FeedUpdater(object):
 
                 wait_for_observations = self.__config.WAIT_FOR_FIRST_MSG \
                     and not observations
-
-                print(('wait?', wait_for_observations, 'idle?', idle))
 
                 if not wait_for_observations and idle:
                     # Reverse the ordering. Oldest first.
