@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 from bot import Bot
 from feedupdater import FeedUpdater
 import os
