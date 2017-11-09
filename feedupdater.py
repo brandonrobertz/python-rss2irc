@@ -95,7 +95,6 @@ class FeedUpdater(object):
         Take our newsitem and return the title as a string. Take
         care of url shortening, as well.
         """
-        print("extract_url %s" % newsitem)
         newsurl = newsitem.link
         urllen = len(newsitem.link)
 
