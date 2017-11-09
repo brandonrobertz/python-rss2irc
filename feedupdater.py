@@ -182,8 +182,8 @@ class FeedUpdater(object):
             except Exception as e:
                 tb = traceback.format_exc()
                 print(e, tb)
-                print("Error on title: {} error {} \n {}".format(
-                    feed_info['title'], e, tb))
+                print("Error on url: {} error {} \n {}".format(
+                    feed_info['url'], e, tb))
 
             if not forever:
                 break
