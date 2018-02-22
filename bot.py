@@ -250,6 +250,10 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         title = self.rewrite_data( str(feed_name), title, dtype='title')
         url = self.rewrite_data( str(feed_name), url, dtype='url')
         try:
+            print("Posting news for url=%s title=%s" % (url, title.encode('utf-8')))
+        except Exception as e:
+            print("Posting news for url=%s" % url)
+        try:
             args = {
                 "name":  str(feed_name),
                 "title": title,
