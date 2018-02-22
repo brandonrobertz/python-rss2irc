@@ -232,7 +232,6 @@ class IRCBot(irc.bot.SingleServerIRCBot):
             ('arXiv:stat.ML', '[stat.ML]', False),
         )
         for ig in ignores:
-            print("ig", ig)
             if feedname != ig[0]:
                 continue
             find_string = ig[1]
@@ -250,24 +249,13 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         #    return
         title = self.rewrite_data( str(feed_name), title, dtype='title')
         url = self.rewrite_data( str(feed_name), url, dtype='url')
-        print("---- VARS ----")
-        print("name")
-        print(str(feed_name))
-        print("title")
-        print(title)
-        print("url")
-        print(url)
         try:
-            print("---- ARGS ----")
             args = {
                 "name":  str(feed_name),
                 "title": title,
                 "url":   url
             }
-            print(args)
-            print("---- MSG ----")
             msg = "<{name}> {title} | {url}".format(**args)
-            print("Sending msg", msg)
             self.send_msg(self.__config.CHANNEL, msg, sleep_s=2)
         except Exception as e:
             tb = traceback.format_exc()

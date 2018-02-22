@@ -34,6 +34,12 @@ class Config(object):
         # name of the channel, etc. Anything beyond that will be truncated)
         self.SHORTEN_URLS = 100
 
+        # Setting this forces the replacement of  bit.ly with whatever
+        # is specified here.
+        # NOTE: bitly removed the option to select j.mp in the API, but the
+        # links still work when you replace the domain.
+        self.BITLY_OVERRIDE_DOMAIN = None
+
         # people to listen to
         self.admin_nicks= ['yournick']
 
