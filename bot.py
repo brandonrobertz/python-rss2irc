@@ -43,7 +43,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
             ('infoworld:AI', '#tk.rss_artificialintelligence', '', 'url'),
         )
 
-         if self.__config.SSL:
+        if self.__config.SSL:
             ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
             super(IRCBot, self).__init__(
                 self.__servers,
