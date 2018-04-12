@@ -22,6 +22,8 @@ def shorten_url(url, config):
     """
     retries = 3
     while retries >= 0:
+        # always sleep some time as a rate limit
+        time.sleep(random.random() * 2)
         try:
             bitly = "{}/shorten?access_token={}&longUrl={}&domain=j.mp".format(
                 "https://api-ssl.bitly.com/v3",
