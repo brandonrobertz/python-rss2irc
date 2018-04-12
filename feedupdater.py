@@ -101,7 +101,7 @@ class FeedUpdater(object):
         newsurl = newsitem.link
         urllen = len(newsitem.link)
 
-		# if we have a arXiv link, use the versioned link
+        # if we have a arXiv link, use the versioned link
         if re.match('https?://arxiv.org/', newsurl):
             matches = re.match(self.__config.find_pattern, newsitem.title)
             if matches and matches.groupdict().get('version'):
