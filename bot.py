@@ -36,16 +36,10 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         repl_pattern = r'\g<title> (\g<version>)'
         # output RSS title rewrites
         self.rewrites = (
-            (r'arXiv:stat.ML', 'http://arxiv.org', 'https://arxiv.org', 'url'),
-            (r'arXiv:cs.LG',   'http://arxiv.org', 'https://arxiv.org', 'url'),
-            (r'arXiv:cs.NE',   'http://arxiv.org', 'https://arxiv.org', 'url'),
-            (r'arXiv:cs.AI',   'http://arxiv.org', 'https://arxiv.org', 'url'),
+            (re.compile('arXiv:.*'), 'http://arxiv.org', 'https://arxiv.org', 'url'),
             # reinstate this after distill fixes its ssl cert
             #('distill.pub', 'http://distill.pub', 'https://distill.pub', 'url'),
-            ('arXiv:stat.ML', self.find_pattern, repl_pattern, 'title'),
-            ('arXiv:cs.LG',   self.find_pattern, repl_pattern, 'title'),
-            ('arXiv:cs.NE',   self.find_pattern, repl_pattern, 'title'),
-            ('arXiv:cs.AI',   self.find_pattern, repl_pattern, 'title'),
+            (re.compile('arXiv:.*'), self.find_pattern, repl_pattern, 'title'),
             ('infoworld:AI', '#tk.rss_artificialintelligence', '', 'url'),
         )
 
@@ -227,7 +221,11 @@ class IRCBot(irc.bot.SingleServerIRCBot):
             replacement = rw[2]
             rw_dtype    = rw[3]
 
-            if rw_feedname != feedname:
+            # if we have a string, it's an exact match, everything else
+            # w/ rw_feedname is treated as a regex (below)
+            if type(rw_feedname) == 'str' and rw_feedname != feedname:
+                continue
+            elif not rw_feedname.match(feedname):
                 continue
             elif rw_dtype == '*' or rw_dtype == '*':
                 # if either dtype is *, skip following checks
