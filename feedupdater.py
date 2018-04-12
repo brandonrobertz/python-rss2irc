@@ -42,7 +42,7 @@ def shorten_url(url, config):
             return short_url
         except Exception as e:
             retries -= 1
-            time.sleep(random.random() * 5)
+            time.sleep((random.random() * 3) + 2)
 
 
 class FeedUpdater(object):
