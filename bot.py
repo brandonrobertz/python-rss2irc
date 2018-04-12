@@ -225,7 +225,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
             # w/ rw_feedname is treated as a regex (below)
             if type(rw_feedname) == 'str' and rw_feedname != feedname:
                 continue
-            elif not rw_feedname.match(feedname):
+            elif hasattr(rw_feedname, 'match') and not rw_feedname.match(feedname):
                 continue
             elif rw_dtype == '*' or rw_dtype == '*':
                 # if either dtype is *, skip following checks
