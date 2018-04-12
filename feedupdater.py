@@ -41,7 +41,6 @@ def shorten_url(url, config):
                 return short_url.replace('bit.ly', config.BITLY_OVERRIDE_DOMAIN)
             return short_url
         except Exception as e:
-            print('Bitly error', e)
             retries -= 1
             time.sleep(random.random() * 5)
 
@@ -121,7 +120,6 @@ class FeedUpdater(object):
             # If that fails, use the long version ... yes apparently it returns
             # the string "Error" on error
             if not newsurl:
-                print("Link shortening failed", newsurl)
                 newsurl = newsitem.link
             # the tinyurl library has http links hardcoded
             newsurl = newsurl.replace(
