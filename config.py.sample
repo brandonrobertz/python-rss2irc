@@ -72,6 +72,13 @@ class Config(object):
         # Update all feeds before connecting to the IRC server
         self.update_before_connecting = True
 
+        # Normally a URL is checked across all feeds. This toggle
+        # disables default behavior for de-duplicating urls by
+        # forcing a specific feed to only check against itself.
+        self.local_dedupes = (
+            'infoworld:AI',
+        )
+
         # rewrites to apply to specfic feeds' titles
         # in format of ( feedname, search, replace, field)
         # available fields: "url", "title", "*" (all types)

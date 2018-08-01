@@ -161,14 +161,16 @@ class FeedUpdater(object):
                         # formatting
                         newstitle = newsitem.title
                         newsdate = self.extract_date(newsitem)
-                        fs = feed_info['title'] in self.__config.FORCE_SHORTEN
+                        feedname = feed_info['title']
+                        fs = feedname in self.__config.FORCE_SHORTEN
                         newsurl = self.extract_url(newsitem, force_shorten=fs)
                         # Update the database. If it's new, post it
                         is_new = self.__db.insert_news(
                             feed_info['id'],
                             newstitle,
                             newsitem.link,
-                            newsdate
+                            newsdate,
+                            local_dedupe_only=feedname in self.__config.local_dedupes
                         )
                         if is_new and callback is not None:
                             callback(

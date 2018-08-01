@@ -94,7 +94,7 @@ class FeedDB(object):
         """
         return self.__db_worker.execute("select count(id) from news")[0][0]
 
-    def insert_news(self, feed_id, title, url, published):
+    def insert_news(self, feed_id, title, url, published, local_dedupe_only=False):
         """
         Checks if a news item with the given information exists. If not,
         create a new entry.
@@ -102,10 +102,15 @@ class FeedDB(object):
         params = {
             'url': url
         }
-        exists = self.__db_worker.execute(
-            "select exists(select 1 FROM news WHERE url = :url LIMIT 1)",
-            params
-        )[0][0]
+        sql = "select exists(select 1 FROM news WHERE url = :url LIMIT 1)"
+
+        # This is the local check override
+        if local_dedupe_only:
+            params['feedid'] = feed_id
+            sql = "select exists(select 1 FROM news WHERE url = :url AND " \
+                    "feedid = :feedid LIMIT 1)"
+
+        exists = self.__db_worker.execute(sql, params)[0][0]
         if exists:
             return False
         params = {
