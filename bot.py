@@ -32,16 +32,6 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         self.color_feedname = self.__config.feedname
         self.color_url = self.__config.url
         self.dateformat = self.__config.dateformat
-        self.find_pattern = r'(?P<title>.*?)\.?\s+\(arXiv:(?P<id>[0-9]+\.[0-9]+)(?P<version>v[0-9]+).*'
-        repl_pattern = r'\g<title> (\g<version>)'
-        # output RSS title rewrites
-        self.rewrites = (
-            (re.compile('arXiv:.*'), 'http://arxiv.org', 'https://arxiv.org', 'url'),
-            # reinstate this after distill fixes its ssl cert
-            #('distill.pub', 'http://distill.pub', 'https://distill.pub', 'url'),
-            (re.compile('arXiv:.*'), self.find_pattern, repl_pattern, 'title'),
-            ('infoworld:AI', '#tk.rss_artificialintelligence', '', 'url'),
-        )
 
         if self.__config.SSL:
             ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
@@ -215,7 +205,10 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         Rewrite feed data (title, url) based on specific feeds
         requirements/needs. return cleaned, stripped, rewritten input
         """
-        for rw in self.rewrites:
+        if not self.__config.rewrites:
+            return data
+
+        for rw in self.__config.rewrites:
             rw_feedname = rw[0]
             searchterm  = rw[1]
             replacement = rw[2]
