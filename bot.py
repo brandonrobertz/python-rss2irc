@@ -57,6 +57,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
                 self.__config.NICK, self.__config.NICKSERV_PASSWORD
             )
             connection.privmsg( "NICKSERV", msg)
+            time.sleep(10) # 10s delay to ensure NickServ does its thing
         # make sure we join chans as the last thing
         if irc.client.is_channel(self.__config.CHANNEL):
             connection.join(self.__config.CHANNEL)
