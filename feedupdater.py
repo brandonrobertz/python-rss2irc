@@ -20,10 +20,11 @@ def shorten_url(url, config):
     """
     Returns None on error
     """
-    retries = 3
+    retries = 6
+    delay = 1.5
     while retries >= 0:
         # always sleep some time as a rate limit
-        time.sleep(random.random() * 2)
+        time.sleep(delay)
         try:
             bitly = "{}/shorten?access_token={}&longUrl={}&domain=j.mp".format(
                 "https://api-ssl.bitly.com/v3",
@@ -42,7 +43,7 @@ def shorten_url(url, config):
             return short_url
         except Exception as e:
             retries -= 1
-            time.sleep((random.random() * 3) + 2)
+            delay *= 2
 
 
 class FeedUpdater(object):
@@ -111,7 +112,8 @@ class FeedUpdater(object):
                 newsurl = url
                 print("versioned url %s" % url)
 
-        if force_shorten or (urllen > self.__config.SHORTEN_URLS):
+        do_shorten = force_shorten or (urllen > self.__config.SHORTEN_URLS)
+        if do_shorten:
             try:
                 newsurl = shorten_url(newsitem.link, self.__config)
             except Exception as e:
@@ -119,7 +121,7 @@ class FeedUpdater(object):
                 newsurl = None
             # If that fails, use the long version ... yes apparently it returns
             # the string "Error" on error
-            if not newsurl:
+            if not newsurl and not do_shorten:
                 newsurl = newsitem.link
             # the tinyurl library has http links hardcoded
             newsurl = newsurl.replace(
@@ -172,7 +174,7 @@ class FeedUpdater(object):
                             newsdate,
                             local_dedupe_only=feedname in self.__config.local_dedupes
                         )
-                        if is_new and callback is not None:
+                        if is_new and callback is not None and newsurl:
                             callback(
                                 feed_info['title'],
                                 newstitle,
