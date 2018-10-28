@@ -119,10 +119,9 @@ class FeedUpdater(object):
             except Exception as e:
                 print('Error loading tinyurl', e)
                 newsurl = None
-            # If that fails, use the long version ... yes apparently it returns
-            # the string "Error" on error
+            # if we couldn't shorten, and needed to, do this one later
             if not newsurl and not do_shorten:
-                newsurl = newsitem.link
+                return
             # the tinyurl library has http links hardcoded
             newsurl = newsurl.replace(
                 'http://tinyurl.com', 'https://tinyurl.com'
