@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import re
+
 
 class Config(object):
     def __init__(self):
@@ -55,7 +57,11 @@ class Config(object):
         # name of the channel, etc. Anything beyond that will be truncated)
         self.SHORTEN_URLS = 80
         # put the names of any feed you want to force shortening on here
-        self.FORCE_SHORTEN = []
+        # these can be full string matches or regex (need to be compiled)
+        self.FORCE_SHORTEN = [
+            "someFeed",
+            re.compile("^beginsWith"),
+        ]
         # bitly API token
         self.bitly_apikey = ""
         # Setting this forces the replacement of  bit.ly with whatever

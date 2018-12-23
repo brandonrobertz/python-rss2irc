@@ -163,7 +163,16 @@ class FeedUpdater(object):
                         newstitle = newsitem.title
                         newsdate = self.extract_date(newsitem)
                         feedname = feed_info['title']
-                        fs = feedname in self.__config.FORCE_SHORTEN
+                        fs = False
+                        if hasattr(self.__config, "FORCE_SHORTEN"):
+                            # FORCE_SHORTEN can be regex or full matched string
+                            regex_type = type(re.compile(''))
+                            for pattern in self.__config.FORCE_SHORTEN:
+                                if (regex_type == type(feedname) and \
+                                    re.match(pattern, feedname)) or \
+                                   feedname == pattern:
+                                    fs = True
+                                    break
                         newsurl = self.extract_url(newsitem, force_shorten=fs)
                         # Update the database. If it's new, post it
                         is_new = self.__db.insert_news(
