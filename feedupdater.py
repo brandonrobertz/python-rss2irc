@@ -110,7 +110,6 @@ class FeedUpdater(object):
                 url = "%s%s" % (newsitem.link, matches.groupdict()['version'])
                 newsitem.link = url
                 newsurl = url
-                print("versioned url %s" % url)
 
         do_shorten = force_shorten or (urllen > self.__config.SHORTEN_URLS)
         if do_shorten:
