@@ -168,9 +168,11 @@ class FeedUpdater(object):
                             # FORCE_SHORTEN can be regex or full matched string
                             regex_type = type(re.compile(''))
                             for pattern in self.__config.FORCE_SHORTEN:
-                                if (regex_type == type(feedname) and \
-                                    re.match(pattern, feedname)) or \
-                                   feedname == pattern:
+                                is_re = regex_type == type(pattern)
+                                if is_re and pattern.match(feedname):
+                                    fs = True
+                                    break
+                                elif feedname == pattern:
                                     fs = True
                                     break
                         newsurl = self.extract_url(newsitem, force_shorten=fs)
